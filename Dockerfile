@@ -1,6 +1,6 @@
 FROM catthehacker/ubuntu:full-latest
 
-ARG RUNNER_VERSION=2.321.0
+ARG RUNNER_VERSION=2.334.0
 
 USER root
 
