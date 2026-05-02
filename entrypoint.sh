@@ -9,6 +9,11 @@ RUNNER_LABELS="${LABELS:-self-hosted,linux,docker}"
 RUNNER_GROUP="${RUNNER_GROUP:-default}"
 RUNNER_WORKDIR="${RUNNER_WORKDIR:-/tmp/runner/work}"
 
+# Workdir is bind-mounted from the host and may be owned by root; the runner
+# runs as the unprivileged `runner` user, so claim the tree on startup.
+sudo mkdir -p "${RUNNER_WORKDIR}"
+sudo chown -R runner:runner "${RUNNER_WORKDIR}" "$(dirname "${RUNNER_WORKDIR}")"
+
 API_BASE="https://api.github.com/orgs/${ORG_NAME}/actions/runners"
 
 echo "Fetching registration token for org: ${ORG_NAME}"
