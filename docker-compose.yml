@@ -9,7 +9,7 @@ services:
       RUNNER_NAME_PREFIX: punter-runner
       RUNNER_WORKDIR: /tmp/runner/work
       RUNNER_GROUP: default
-      LABELS: self-hosted,linux,docker,full,easypanel
+      LABELS: self-hosted,linux
     security_opt:
       - label:disable
     volumes:
