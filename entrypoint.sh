@@ -7,7 +7,9 @@ set -e
 RUNNER_NAME="${RUNNER_NAME_PREFIX:-punter-runner}-$(hostname)-$RANDOM"
 RUNNER_LABELS="${LABELS:-self-hosted,linux,docker}"
 RUNNER_GROUP="${RUNNER_GROUP:-default}"
-RUNNER_WORKDIR="${RUNNER_WORKDIR:-/tmp/runner/work}"
+# Default to a per-container workdir so replicas don't fight over the same
+# checkout tree when /tmp/runner is shared via a host bind-mount.
+RUNNER_WORKDIR="${RUNNER_WORKDIR:-/tmp/runner/$(hostname)/work}"
 
 # Workdir is bind-mounted from the host and may be owned by root; the runner
 # runs as the unprivileged `runner` user, so claim the tree on startup.
