@@ -1,0 +1,51 @@
+#!/bin/bash
+set -e
+
+: "${ORG_NAME:?ORG_NAME is required}"
+: "${ACCESS_TOKEN:?ACCESS_TOKEN is required}"
+
+RUNNER_NAME="${RUNNER_NAME_PREFIX:-punter-runner}-$(hostname)-$RANDOM"
+RUNNER_LABELS="${LABELS:-self-hosted,linux,docker}"
+RUNNER_GROUP="${RUNNER_GROUP:-default}"
+RUNNER_WORKDIR="${RUNNER_WORKDIR:-/tmp/runner/work}"
+
+API_BASE="https://api.github.com/orgs/${ORG_NAME}/actions/runners"
+
+echo "Fetching registration token for org: ${ORG_NAME}"
+REG_TOKEN=$(curl -fsS -X POST \
+    -H "Authorization: token ${ACCESS_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    "${API_BASE}/registration-token" | jq -r .token)
+
+if [ -z "$REG_TOKEN" ] || [ "$REG_TOKEN" = "null" ]; then
+    echo "ERROR: Failed to fetch registration token. Check ACCESS_TOKEN permissions and ORG_NAME."
+    exit 1
+fi
+
+cd /actions-runner
+
+./config.sh \
+    --url "https://github.com/${ORG_NAME}" \
+    --token "${REG_TOKEN}" \
+    --name "${RUNNER_NAME}" \
+    --labels "${RUNNER_LABELS}" \
+    --runnergroup "${RUNNER_GROUP}" \
+    --work "${RUNNER_WORKDIR}" \
+    --unattended \
+    --replace \
+    --ephemeral
+
+# Graceful deregistration on container stop
+cleanup() {
+    echo "Deregistering runner..."
+    REMOVE_TOKEN=$(curl -fsS -X POST \
+        -H "Authorization: token ${ACCESS_TOKEN}" \
+        -H "Accept: application/vnd.github+json" \
+        "${API_BASE}/remove-token" | jq -r .token)
+    ./config.sh remove --token "${REMOVE_TOKEN}" || true
+}
+
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
+
+./run.sh & wait $!

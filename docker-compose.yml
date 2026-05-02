@@ -1,0 +1,22 @@
+services:
+  github-runner:
+    build: .
+    image: punter-runner-full:latest
+    restart: unless-stopped
+    environment:
+      ORG_NAME: PunterDigital
+      ACCESS_TOKEN: ${GITHUB_PAT}
+      RUNNER_NAME_PREFIX: punter-runner
+      RUNNER_WORKDIR: /tmp/runner/work
+      RUNNER_GROUP: default
+      LABELS: self-hosted,linux,docker,full,easypanel
+    security_opt:
+      - label:disable
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/runner:/tmp/runner
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
