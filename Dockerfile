@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl jq sudo ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
-# Create runner user with sudo + docker group access
-RUN useradd -m -s /bin/bash runner \
+# Ensure runner user exists (catthehacker base already ships one) with sudo + docker group access
+RUN id -u runner >/dev/null 2>&1 || useradd -m -s /bin/bash runner \
     && echo "runner ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/runner \
     && (getent group docker || groupadd docker) \
     && usermod -aG docker runner
