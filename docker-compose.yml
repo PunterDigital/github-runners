@@ -19,4 +19,4 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 4G
+          memory: 16G
