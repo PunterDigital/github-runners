@@ -30,14 +30,13 @@ RUN curl -fsSL -o runner.tar.gz \
 
 ENV ANDROID_HOME=/opt/android-sdk
 ENV NDK_HOME=/opt/android-sdk/ndk/30.0.14904198
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$JAVA_HOME/bin:$PATH
 
-# JDK 17 (Tauri/Gradle for this version doesn't accept JDK 21 cleanly) plus
-# system libs the Rust deps link against (alsa is for cpal even though we
-# don't capture audio in CI).
+# JDK 21 plus system libs the Rust deps link against (alsa is for cpal even
+# though we don't capture audio in CI).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        openjdk-17-jdk-headless \
+        openjdk-21-jdk-headless \
         unzip \
         build-essential \
         pkg-config \
