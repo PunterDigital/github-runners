@@ -30,14 +30,13 @@ RUN curl -fsSL -o runner.tar.gz \
 
 ENV ANDROID_HOME=/opt/android-sdk
 ENV NDK_HOME=/opt/android-sdk/ndk/30.0.14904198
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$JAVA_HOME/bin:$PATH
 
-# JDK 17 (Tauri/Gradle for this version doesn't accept JDK 21 cleanly) plus
-# system libs the Rust deps link against (alsa is for cpal even though we
-# don't capture audio in CI).
+# JDK 21 plus system libs the Rust deps link against (alsa is for cpal even
+# though we don't capture audio in CI).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        openjdk-17-jdk-headless \
+        openjdk-21-jdk-headless \
         unzip \
         build-essential \
         pkg-config \
@@ -63,14 +62,21 @@ RUN mkdir -p "${ANDROID_HOME}/cmdline-tools" \
     && chown -R runner:runner "${ANDROID_HOME}"
 
 # Rust + Android targets, installed for the runner user that executes jobs.
+# The catthehacker base already ships rustup with a stable toolchain; re-running
+# the installer would try to upgrade in-place and fails with a cross-device
+# rename because ~/.rustup/tmp lives on a different mount than ~/.rustup. Only
+# bootstrap rustup if it isn't already there.
 USER runner
-RUN curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal \
-    && /home/runner/.cargo/bin/rustup target add \
+ENV PATH=/home/runner/.cargo/bin:$PATH
+RUN if [ ! -x /home/runner/.cargo/bin/rustup ]; then \
+        curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs \
+            | sh -s -- -y --default-toolchain stable --profile minimal; \
+    fi \
+    && rustup target add \
         aarch64-linux-android \
         armv7-linux-androideabi \
         i686-linux-android \
         x86_64-linux-android
-ENV PATH=/home/runner/.cargo/bin:$PATH
 
 # Verify the toolchain is wired up end-to-end. Any non-empty failure here means
 # the image isn't ready for the android workflow.
